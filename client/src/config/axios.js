@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:4444/api'; 
-
-export const axiosInstance = axios.create({
-    baseURL: BASE_URL,
-    withCredentials: true,
-    // REMOVED: headers: { 'Content-Type': 'application/json' } 
-    // Allowing Axios to set this automatically solves the issue!
+export const instance = axios.create({
+    // If the app is built for production, use the current domain (empty string).
+    // If running locally, use your hardcoded port 4444.
+    baseURL: import.meta.env.MODE === 'production' ? '' : 'http://localhost:5000',
+    withCredentials: true // Ensure this is kept if you use cookies
 });
