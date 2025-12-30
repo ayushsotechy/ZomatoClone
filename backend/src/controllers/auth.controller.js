@@ -1,5 +1,5 @@
 const userModel = require("../models/user.model");
-const foodPartnerModel = require("../models/foodPartner.model");
+const foodPartnerModel = require("../models/foodpartner.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
