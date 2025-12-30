@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const foodController = require("../controllers/food.controller");
-// const authMiddleware = require('../middlewares/auth.middleware'); // Kept commented out for public feed
+const authMiddleware = require('../middlewares/auth.middleware'); // Kept commented out for public feed
 const upload = require('../middlewares/upload.middleware');
 const foodModel = require('../models/food.model'); // Import the model directly for likes
 
 // 1. Create Food (Upload Reel)
 router.post('/create', 
-    // authMiddleware.authFoodPartnerMiddleware, 
+    authMiddleware.authFoodPartnerMiddleware, 
     upload.single('video'),
     foodController.createFood
 );
