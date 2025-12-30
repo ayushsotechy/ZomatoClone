@@ -3,6 +3,7 @@ const uploadService = require('../services/storage.service');
 const foodDao = require('../dao/food.dao');
 const { v4:uuid} = require('uuid');
 
+
 async function createFood(req, res) {
     try {
         if (!req.file) {
@@ -54,8 +55,27 @@ async function getAllFoods(req,res){
         return res.status(500).json({message:"Error fetching foods"});
     }
 }
+async function getFoodsByPartner(req, res) {
+    try {
+        const { partnerId } = req.params;
+        const foods = await foodDao.getFoodsByPartner(partnerId);
+        
+        if (!foods || foods.length === 0) {
+            return res.status(404).json({ message: "No foods found for this partner" });
+        }
+
+        res.status(200).json({
+            message: "Partner foods fetched",
+            data: foods,
+            partner: foods[0].foodPartner // Send partner details separately for easy access
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching partner foods" });
+    }
+}
 
 module.exports = {
     createFood,
-    getAllFoods
+    getAllFoods,
+    getFoodsByPartner
 };
