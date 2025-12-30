@@ -1,0 +1,43 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main  # Or 'master', depending on your branch name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          # 1. Go to project folder
+          cd /var/www/ZomatoClone
+
+          # 2. Pull latest code
+          git pull origin main
+
+          # --- BACKEND ---
+          echo "Deploying Backend..."
+          cd backend
+          npm install
+          # Restart PM2 (Updates code in memory)
+          pm2 restart zomato-backend
+
+          # --- FRONTEND ---
+          echo "Deploying Frontend..."
+          cd ../client
+          npm install
+          # Rebuild the React App (Updates the 'dist' folder)
+          npm run build
+          
+          echo "Deployment Complete! 🚀"
