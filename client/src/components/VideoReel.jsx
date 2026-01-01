@@ -67,11 +67,23 @@ const VideoReel = ({ food }) => {
         alert(`🍔 Added ${food.name} to your cart!`); 
     };
 
-    return (
-        <div className="w-full h-screen bg-black flex items-center justify-center snap-start relative">
+return (
+        // 1. OUTER WRAPPER
+        // Mobile: h-full -> Fills the container we set in Home.jsx
+        // Desktop: md:h-screen -> Centers it on the big screen
+        <div className="w-full flex items-center justify-center snap-start relative h-full md:h-screen">
             
-            {/* PLAYER CONTAINER */}
-            <div className="relative h-[96vh] aspect-[9/16] bg-gray-900 rounded-xl overflow-hidden border border-white/5 shadow-2xl shadow-black group">
+            {/* 2. PLAYER FRAME (The Important Fix)
+                Mobile: w-full h-full -> Full width/height.
+                Desktop: 
+                   - md:h-[85vh] -> Limits height so it's not huge.
+                   - md:aspect-[9/16] -> Forces it to look like a phone.
+                   - md:w-auto -> Auto width based on the aspect ratio.
+                   - md:rounded-[35px] -> Rounded corners only on desktop.
+            */}
+            <div className="relative overflow-hidden bg-gray-900 border-white/5 shadow-2xl shadow-black group
+                            w-full h-full 
+                            md:h-[85vh] md:w-auto md:aspect-[9/16] md:rounded-[35px] md:border">
                 
                 {/* VIDEO ELEMENT */}
                 <video
@@ -93,10 +105,8 @@ const VideoReel = ({ food }) => {
                     {isMuted ? "🔇" : "🔊"}
                 </button>
 
-{/* --- RIGHT SIDE ACTIONS (Shifted DOWN for better symmetry) --- */}
-                {/* Changed bottom-40 -> bottom-28 */}
-                <div className="absolute bottom-28 right-3 flex flex-col gap-5 items-center z-20">
-                    
+                {/* RIGHT ACTIONS */}
+                <div className="absolute bottom-32 right-3 flex flex-col gap-5 items-center z-20">
                     {/* Like */}
                     <button onClick={handleLike} className="flex flex-col items-center group">
                         <div className={`p-2 transition-transform transform active:scale-75 ${liked ? 'text-red-500' : 'text-white'}`}>
@@ -127,11 +137,10 @@ const VideoReel = ({ food }) => {
                         <span className="text-white text-xs font-semibold drop-shadow-md shadow-black">Info</span>
                     </button>
                 </div>
-                {/* --- BOTTOM INFO OVERLAY (New Layout) --- */}
+
+                {/* BOTTOM OVERLAY */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/60 to-transparent text-white z-10 flex flex-col gap-3">
-                    
-                    {/* 1. TEXT INFO (Pushed up) */}
-                    <div className="pr-12"> {/* Added padding-right to avoid hitting the action buttons */}
+                    <div className="pr-12">
                         <Link to={`/restaurant/${food.foodPartner?._id}`} className="flex items-center gap-2 mb-2 group w-fit">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-red-500 to-orange-500 flex items-center justify-center text-[10px] font-bold border border-white/50">
                                 {food.foodPartner?.username?.[0]?.toUpperCase()}
@@ -145,7 +154,6 @@ const VideoReel = ({ food }) => {
                         <p className="text-xs text-gray-200 line-clamp-2 drop-shadow-sm opacity-90">{food.description}</p>
                     </div>
 
-                    {/* 2. FULL WIDTH ORDER BUTTON */}
                     <button 
                         onClick={handleOrder} 
                         className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2"
@@ -154,8 +162,9 @@ const VideoReel = ({ food }) => {
                         <span className="bg-white/20 px-2 py-0.5 rounded text-xs">₹{food.price || 150}</span>
                     </button>
                 </div>
-
-                {/* POPUPS (Unchanged) */}
+                
+                {/* --- POPUPS (Keep your existing ShowDetails/ShowComments logic here) --- */}
+                {/* ... paste popups code ... */}
                 {showDetails && (
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-40 flex items-center justify-center p-6 animate-in fade-in duration-200">
                         <div className="bg-gray-900 border border-gray-800 p-6 rounded-3xl w-full h-auto shadow-2xl relative">
@@ -170,8 +179,7 @@ const VideoReel = ({ food }) => {
                         </div>
                     </div>
                 )}
-
-                {showComments && (
+                 {showComments && (
                     <div className="absolute inset-x-0 bottom-0 top-1/3 bg-gray-900 rounded-t-3xl z-40 flex flex-col border-t border-gray-800 animate-in slide-in-from-bottom duration-300">
                         <div className="flex justify-between items-center p-4 border-b border-gray-800">
                             <h3 className="font-bold text-sm text-white">Comments</h3>
