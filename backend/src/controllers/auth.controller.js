@@ -132,11 +132,32 @@ async function logoutFoodPartner(req,res){
   res.clearCookie("token");
   return res.status(200).json({message:"Logout successful"});
 }
+getMyProfile = async (req, res) => {
+  try {
+    // Debugging: Check if middleware worked
+    // console.log("User attached by middleware:", req.user);
+
+    if (!req.user) {
+        return res.status(404).json({ message: "User not found in request" });
+    }
+
+    res.status(200).json({
+      _id: req.user._id,
+      username: req.user.username,
+      email: req.user.email,
+      role: "user",
+    });
+  } catch (error) {
+    console.error("Error in getMyProfile:", error); // <--- This will print the error to your terminal
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
 module.exports = { 
     registerUser, 
     loginUser,
     logoutUser,
     registerFoodPartner,
     loginFoodPartner,
-    logoutFoodPartner
+    logoutFoodPartner,
+    getMyProfile
 };

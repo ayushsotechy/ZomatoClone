@@ -25,3 +25,12 @@ export const loginPartner = async (data) => {
 export const logoutPartner = async () => {
     return await axiosInstance.get('/auth/food-partner/logout'); // This was missing!
 };
+
+export const getMyProfile = async () => {
+  const token = localStorage.getItem("zomatoToken");
+  return await axiosInstance.get('/auth/me', {
+    headers: {
+      Authorization: `Bearer ${token}` // <--- This is what the middleware now catches!
+    }
+  });
+};

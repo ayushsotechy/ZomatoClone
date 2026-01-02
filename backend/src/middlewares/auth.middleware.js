@@ -27,28 +27,35 @@ async function authFoodPartnerMiddleware(req, res, next) {
   }
 }
 async function userPartnerMiddleware(req, res, next) {
-  const token = req.cookies.token;
-
   try {
-    if (!token) {
-      return res.status(401).json({
-        message: "Please login first!",
-      });
+    // 1. Try to get token from Cookies OR Authorization Header
+    let token = req.cookies.token;
+    
+    // If not in cookie, check the header (Bearer token)
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+      token = req.headers.authorization.split(" ")[1];
     }
 
+    if (!token) {
+      return res.status(401).json({ message: "Please login first!" });
+    }
+
+    // 2. Verify Token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const existingUser = await user.findById(decoded.userId);
+    // 3. Handle Mismatch: Google Auth uses 'id', Standard Login uses 'userId'
+    const currentUserId = decoded.userId || decoded.id; 
+
+    const existingUser = await user.findById(currentUserId);
 
     if (!existingUser) {
-      return res.status(401).json({
-        message: "Unauthorized access",
-      });
+      return res.status(401).json({ message: "Unauthorized access" });
     }
 
     req.user = existingUser;
     next();
   } catch (error) {
+    console.log("Auth Middleware Error:", error.message);
     return res.status(401).json({ message: "Unauthorized" });
   }
 }
