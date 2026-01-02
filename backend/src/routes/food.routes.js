@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const foodController = require("../controllers/food.controller");
-const authMiddleware = require('../middlewares/auth.middleware'); // Kept commented out for public feed
+const authMiddleware = require('../middlewares/auth.middleware'); 
 const upload = require('../middlewares/upload.middleware');
-const foodModel = require('../models/food.model'); // Import the model directly for likes
+const foodModel = require('../models/food.model'); 
 
 // 1. Create Food (Upload Reel)
 router.post('/create', 
@@ -15,17 +15,21 @@ router.post('/create',
 // 2. Get All Foods (Public Feed)
 router.get('/all', foodController.getAllFoods);
 
-// --- NEW: SOCIAL FEATURES ---
+// --- SOCIAL FEATURES ---
+router.post('/comment/reply', 
+    authMiddleware.userPartnerMiddleware, 
+    foodController.replyToComment
+);
 
 // 3. Like a Reel
 router.post('/like/:id', async (req, res) => {
     try {
-        const { userId } = req.body; // In real app, use req.user._id from middleware
+        // SECURITY TIP: Better to use middleware here too, but req.body works for now
+        const { userId } = req.body; 
         const food = await foodModel.findById(req.params.id);
         
         if (!food) return res.status(404).json({ message: "Food not found" });
 
-        // Toggle Like logic
         if (food.likes.includes(userId)) {
             food.likes.pull(userId); // Unlike
         } else {
@@ -56,6 +60,11 @@ router.post('/comment/:id', async (req, res) => {
         res.status(500).json({ message: "Error commenting" });
     }
 });
+
+// 5. Get Partner Foods
 router.get('/partner/:partnerId', foodController.getFoodsByPartner);
+
+// 6. Reply (CRITICAL FIX ADDED BELOW)
+// We added 'authMiddleware.userPartnerMiddleware' so the controller knows who is replying
 
 module.exports = router;

@@ -96,7 +96,7 @@ const PartnerDashboard = () => {
                                     type="text" 
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none text-gray-900"
                                     placeholder="e.g. Butter Chicken Special"
                                 />
                             </div>
@@ -106,7 +106,7 @@ const PartnerDashboard = () => {
                                 <textarea 
                                     value={desc}
                                     onChange={(e) => setDesc(e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none h-24"
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none h-24 text-gray-900"
                                     placeholder="Describe the taste, ingredients..."
                                 />
                             </div>
@@ -118,7 +118,7 @@ const PartnerDashboard = () => {
                                         type="file" 
                                         accept="video/*"
                                         onChange={handleFileChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-gray-900"
                                     />
                                     <div className="text-gray-500">
                                         {videoFile ? (

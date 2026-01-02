@@ -1,9 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react'; // Added useEffect
 import { useCart } from '../context/CartContext'; 
 import { toggleLike, addComment } from '../api/food';
 import { Link } from 'react-router-dom';
+import CommentItem from "./CommentItem";
 
-const VideoReel = ({ food }) => {
+// 1. CHANGE: Accept 'refreshData' here
+const VideoReel = ({ food, refreshData }) => {
     const videoRef = useRef(null);
     const [isMuted, setIsMuted] = useState(true);
     const { addToCart } = useCart();
@@ -18,7 +20,15 @@ const VideoReel = ({ food }) => {
     // Comment & Details State
     const [showComments, setShowComments] = useState(false);
     const [showDetails, setShowDetails] = useState(false);
+    
+    // 2. CHANGE: Sync comments with props so replies show up instantly
     const [comments, setComments] = useState(food.comments || []);
+
+    useEffect(() => {
+        setComments(food.comments || []);
+    }, [food.comments]);
+    // ---------------------------------------------------------
+
     const [commentText, setCommentText] = useState('');
 
     // --- MOCK DATA ---
@@ -27,7 +37,7 @@ const VideoReel = ({ food }) => {
 
     const toggleMute = () => {
         setIsMuted(!isMuted);
-        videoRef.current.muted = !isMuted;
+        if (videoRef.current) videoRef.current.muted = !isMuted;
     };
 
     const handleLike = async () => {
@@ -46,17 +56,11 @@ const VideoReel = ({ food }) => {
         e.preventDefault();
         if (!commentText.trim()) return;
 
-        const currentUserName = user?.username || user?.name || "You"; 
-        const newComment = { 
-            text: commentText, 
-            user: { username: currentUserName }, 
-            createdAt: new Date() 
-        };
-        setComments([...comments, newComment]);
-        setCommentText('');
-
         try {
             await addComment(food._id, commentText);
+            setCommentText('');
+            // 3. CHANGE: Refresh data to get the real comment from server
+            if (refreshData) refreshData(); 
         } catch (error) {
             console.error("Comment failed");
         }
@@ -67,25 +71,10 @@ const VideoReel = ({ food }) => {
         alert(`🍔 Added ${food.name} to your cart!`); 
     };
 
-return (
-        // 1. OUTER WRAPPER
-        // Mobile: h-full -> Fills the container we set in Home.jsx
-        // Desktop: md:h-screen -> Centers it on the big screen
+    return (
         <div className="w-full flex items-center justify-center snap-start relative h-full md:h-screen">
-            
-            {/* 2. PLAYER FRAME (The Important Fix)
-                Mobile: w-full h-full -> Full width/height.
-                Desktop: 
-                   - md:h-[85vh] -> Limits height so it's not huge.
-                   - md:aspect-[9/16] -> Forces it to look like a phone.
-                   - md:w-auto -> Auto width based on the aspect ratio.
-                   - md:rounded-[35px] -> Rounded corners only on desktop.
-            */}
-            <div className="relative overflow-hidden bg-gray-900 border-white/5 shadow-2xl shadow-black group
-                            w-full h-full 
-                            md:h-[85vh] md:w-auto md:aspect-[9/16] md:rounded-[35px] md:border">
+            <div className="relative overflow-hidden bg-gray-900 border-white/5 shadow-2xl shadow-black group w-full h-full md:h-[85vh] md:w-auto md:aspect-[9/16] md:rounded-[35px] md:border">
                 
-                {/* VIDEO ELEMENT */}
                 <video
                     ref={videoRef}
                     src={food.video}
@@ -97,7 +86,7 @@ return (
                     onClick={toggleMute}
                 />
 
-                {/* Mute Button */}
+                {/* ... (Keep Mute, Like, Share buttons exactly as they were) ... */}
                 <button 
                     onClick={toggleMute}
                     className="absolute top-5 right-5 bg-black/50 p-2 rounded-full text-white backdrop-blur-sm z-10 hover:bg-black/70 transition"
@@ -107,7 +96,6 @@ return (
 
                 {/* RIGHT ACTIONS */}
                 <div className="absolute bottom-32 right-3 flex flex-col gap-5 items-center z-20">
-                    {/* Like */}
                     <button onClick={handleLike} className="flex flex-col items-center group">
                         <div className={`p-2 transition-transform transform active:scale-75 ${liked ? 'text-red-500' : 'text-white'}`}>
                             <svg xmlns="http://www.w3.org/2000/svg" fill={liked ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 drop-shadow-lg filter shadow-black">
@@ -117,7 +105,6 @@ return (
                         <span className="text-white text-xs font-semibold drop-shadow-md shadow-black">{likeCount}</span>
                     </button>
 
-                    {/* Comment */}
                     <button onClick={() => setShowComments(true)} className="flex flex-col items-center group">
                         <div className="p-2 text-white transition-transform transform active:scale-75">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 drop-shadow-lg filter shadow-black">
@@ -127,7 +114,6 @@ return (
                         <span className="text-white text-xs font-semibold drop-shadow-md shadow-black">{comments.length}</span>
                     </button>
 
-                    {/* Info */}
                     <button onClick={() => setShowDetails(true)} className="flex flex-col items-center group">
                         <div className="p-2 text-white transition-transform transform active:scale-75">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 drop-shadow-lg filter shadow-black">
@@ -154,17 +140,13 @@ return (
                         <p className="text-xs text-gray-200 line-clamp-2 drop-shadow-sm opacity-90">{food.description}</p>
                     </div>
 
-                    <button 
-                        onClick={handleOrder} 
-                        className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2"
-                    >
+                    <button onClick={handleOrder} className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3.5 rounded-xl shadow-lg transform active:scale-[0.98] transition-all text-sm flex items-center justify-center gap-2">
                         <span>Order Now</span>
                         <span className="bg-white/20 px-2 py-0.5 rounded text-xs">₹{food.price || 150}</span>
                     </button>
                 </div>
                 
-                {/* --- POPUPS (Keep your existing ShowDetails/ShowComments logic here) --- */}
-                {/* ... paste popups code ... */}
+                {/* --- POPUPS --- */}
                 {showDetails && (
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-40 flex items-center justify-center p-6 animate-in fade-in duration-200">
                         <div className="bg-gray-900 border border-gray-800 p-6 rounded-3xl w-full h-auto shadow-2xl relative">
@@ -179,24 +161,41 @@ return (
                         </div>
                     </div>
                 )}
+                
+                 {/* 4. CHANGE: THE COMMENT SECTION */}
                  {showComments && (
                     <div className="absolute inset-x-0 bottom-0 top-1/3 bg-gray-900 rounded-t-3xl z-40 flex flex-col border-t border-gray-800 animate-in slide-in-from-bottom duration-300">
                         <div className="flex justify-between items-center p-4 border-b border-gray-800">
-                            <h3 className="font-bold text-sm text-white">Comments</h3>
+                            <h3 className="font-bold text-sm text-white">Comments ({comments.length})</h3>
                             <button onClick={() => setShowComments(false)} className="text-gray-400">✕</button>
                         </div>
+                        
+                        {/* THE NEW LOOP */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                             {comments.map((c, i) => (
-                                 <div key={i} className="flex gap-3">
-                                     <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-white flex-shrink-0">{c.user?.username?.[0]}</div>
-                                     <div>
-                                        <p className="text-[10px] font-bold text-gray-400">{c.user?.username}</p>
-                                        <p className="text-xs text-white">{c.text}</p>
-                                     </div>
+                             {comments.length > 0 ? (
+                                 comments.map((c) => (
+                                    <CommentItem 
+                                        key={c._id || Math.random()} 
+                                        foodId={food._id} 
+                                        comment={c} 
+                                        refreshData={refreshData} // Pass the refresher
+                                    />
+                                 ))
+                             ) : (
+                                 <div className="text-center text-gray-500 mt-10 text-xs">
+                                     No comments yet. Be the first!
                                  </div>
-                             ))}
+                             )}
                         </div>
-                        <form onSubmit={handleCommentSubmit} className="p-4 border-t border-gray-800"><input className="w-full bg-black text-white rounded-full px-4 py-2 border border-gray-700 focus:outline-none text-xs" placeholder="Add a comment..." value={commentText} onChange={e=>setCommentText(e.target.value)}/></form>
+
+                        <form onSubmit={handleCommentSubmit} className="p-4 border-t border-gray-800">
+                            <input 
+                                className="w-full bg-black text-white rounded-full px-4 py-2 border border-gray-700 focus:outline-none text-xs focus:border-red-500 transition-colors" 
+                                placeholder="Add a comment..." 
+                                value={commentText} 
+                                onChange={e=>setCommentText(e.target.value)}
+                            />
+                        </form>
                     </div>
                 )}
             </div>

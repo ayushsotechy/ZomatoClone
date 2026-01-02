@@ -8,69 +8,74 @@ import Home from './pages/Home';
 import Cart from './pages/Cart';
 import RestaurantProfile from './pages/RestaurantProfile';
 import { useAuth } from './context/AuthContext';
-import { jwtDecode } from "jwt-decode"; // Optional: If you want real data
 import { getMyProfile } from './api/auth';
 
 function App() {
-  const { user } = useAuth();
+  const { user, login } = useAuth(); // Make sure to destructure 'login' if needed for state updates
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // --- GOOGLE AUTH HANDLER ---
+  // --- GOOGLE AUTH HANDLER (THE FIX) ---
   useEffect(() => {
-    // We define an async function inside useEffect to handle the API call
     const completeGoogleLogin = async () => {
       const queryParams = new URLSearchParams(location.search);
       const token = queryParams.get("token");
 
       if (token) {
         try {
-          // 1. Save Token
+          // 1. SAVE THE TOKEN (Critical Step for 401 Error)
           localStorage.setItem("zomatoToken", token);
           
-          // 2. FETCH REAL USER PROFILE (Replaces dummyUser)
+          // 2. Fetch the user profile using that token
           const response = await getMyProfile();
           
-          // 3. Save the REAL user data to localStorage
-          // response.data usually contains the user object
+          // 3. Save User Data
           localStorage.setItem("zomatoUser", JSON.stringify(response.data));
+          
+          // 4. Update Context (Optional but good for immediate UI update)
+          // login(response.data); 
 
-          // 4. Clean URL
+          // 5. Clean the URL (remove ?token=...)
           window.history.replaceState({}, document.title, "/");
 
-          // 5. Force Reload to apply changes and update Auth State
+          // 6. Reload to ensure all states (Sidebar, Axios) pick up the new token
           window.location.reload();
           
         } catch (error) {
           console.error("Google Login Failed:", error);
-          // Optional: If fetching profile fails, clear token so they try again
+          // If it fails, clear the bad token
           localStorage.removeItem("zomatoToken");
+          navigate('/login');
         }
       }
     };
 
     completeGoogleLogin();
-  }, [location]);
+  }, [location, navigate]);
 
-  // ... (Rest of your ProtectedRoute / PublicRoute logic remains the same)
-
+  // --- PROTECTED ROUTE ---
   const ProtectedRoute = ({ children }) => {
-    // Now 'user' will be found in localStorage, so this won't block you!
     const storedUser = JSON.parse(localStorage.getItem("zomatoUser"));
     if (!user && !storedUser) return <Navigate to="/login" replace />;
     return children;
   };
 
+  // --- PUBLIC ROUTE ---
   const PublicRoute = ({ children }) => {
     const storedUser = JSON.parse(localStorage.getItem("zomatoUser"));
-    if (user || storedUser) return <Navigate to="/" replace />;
+    const currentUser = user || storedUser;
+
+    if (currentUser) {
+      return <Navigate to={currentUser.role === 'partner' ? "/dashboard" : "/"} replace />;
+    }
     return children;
   };
 
-  // IF NOT LOGGED IN
-  // Check localStorage directly to prevent flashing Login page on refresh
   const storedUser = JSON.parse(localStorage.getItem("zomatoUser"));
+  const currentUser = user || storedUser;
 
-  if (!user && !storedUser) {
+  // 1. IF NOT LOGGED IN
+  if (!currentUser) {
     return (
       <Routes>
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -80,7 +85,7 @@ function App() {
     );
   }
 
-  // IF LOGGED IN
+  // 2. IF LOGGED IN
   return (
     <div className="flex bg-black min-h-screen">
       <Sidebar />
@@ -90,7 +95,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/restaurant/:id" element={<RestaurantProfile />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to={currentUser.role === 'partner' ? "/dashboard" : "/"} />} />
         </Routes>
       </main>
     </div>

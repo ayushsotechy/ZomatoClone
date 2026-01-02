@@ -44,16 +44,31 @@ async function createFood(req, res) {
 }
 
 async function getAllFoods(req,res){
-    try{
-        const foods = await foodDao.getAllFoods();
-        res.status(200).json({
-            message:"Foods fetched successfully",
-            data:foods
-        }); 
-    }
-    catch(err){
-        return res.status(500).json({message:"Error fetching foods"});
-    }
+    try {
+    const foods = await foodModel.find()
+      .populate("foodPartner", "username name profileImage") // Populate the Restaurant info
+      
+      // ✅ POPULATE COMMENTS AND REPLIES
+      .populate({
+        path: "comments",
+        populate: [
+          { 
+            path: "user", 
+            select: "username name" // Get username for the main comment
+          },
+          { 
+            path: "replies.user", 
+            select: "username name" // Get username for the replies
+          }
+        ]
+      })
+      .sort({ createdAt: -1 }); // Show newest reels first
+
+    res.json(foods);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
 }
 async function getFoodsByPartner(req, res) {
     try {
@@ -73,9 +88,45 @@ async function getFoodsByPartner(req, res) {
         res.status(500).json({ message: "Error fetching partner foods" });
     }
 }
+async function replyToComment(req,res){
+    try {
+    const { foodId, commentId, text } = req.body;
+    
+    // Check if user exists (Handling both User and Partner logins)
+    const userId = req.user?._id || req.foodie?._id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const food = await foodModel.findById(foodId);
+    if (!food) return res.status(404).json({ message: "Food not found" });
+
+    const comment = food.comments.id(commentId); 
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    // --- SAFETY CHECK FOR OLD DATA ---
+    // If 'replies' array doesn't exist yet, create it!
+    if (!comment.replies) {
+        comment.replies = [];
+    }
+    // ---------------------------------
+
+    comment.replies.push({
+      user: userId,
+      text: text,
+      createdAt: new Date()
+    });
+
+    await food.save();
+
+    res.status(200).json({ message: "Reply added!", food });
+  } catch (error) {
+    console.error("Reply Error:", error); // Print error to terminal so you can see it
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+}
 
 module.exports = {
     createFood,
     getAllFoods,
-    getFoodsByPartner
+    getFoodsByPartner,
+    replyToComment
 };

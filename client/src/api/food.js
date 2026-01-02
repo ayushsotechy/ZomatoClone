@@ -49,3 +49,13 @@ export const getPartnerFoods = async (partnerId) => {
     const response = await axiosInstance.get(`/food/partner/${partnerId}`);
     return response.data;
 };
+
+export const replyToComment = async (foodId, commentId, text) => {
+    // We don't need to send userId anymore because the Token (cookie/header) handles it!
+    const response = await axiosInstance.post('food/comment/reply', {
+        foodId,
+        commentId,
+        text
+    });
+    return response.data;
+};
