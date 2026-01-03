@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { toggleLike, addComment } from '../api/food';
 import { Link } from 'react-router-dom';
 import CommentItem from "./CommentItem";
+import ReelModal from './ReelModal'; 
 
 // 1. CHANGE: Accept 'refreshData' here
 const VideoReel = ({ food, refreshData }) => {

@@ -6,33 +6,24 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
     const { user } = useAuth();
     const [cartItems, setCartItems] = useState([]);
-    
-    // Safety Flag: Prevents saving before loading is done
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Calculate the unique key based on user ID
     const userId = user?.id || user?._id;
     const cartKey = userId ? `zomatoCart_${userId}` : 'zomatoCart_guest';
 
-    // 1. LOAD EFFECT (Runs when user changes)
     useEffect(() => {
-        setIsLoaded(false); // Stop saving while we switch users
-        
+        setIsLoaded(false);
         const savedCart = localStorage.getItem(cartKey);
         if (savedCart) {
             setCartItems(JSON.parse(savedCart));
         } else {
             setCartItems([]);
         }
-
-        setIsLoaded(true); // Now allowed to save
+        setIsLoaded(true);
     }, [cartKey]);
 
-    // 2. SAVE EFFECT (Runs when items change)
     useEffect(() => {
-        // STOP! Don't save if we haven't finished loading yet.
-        if (!isLoaded) return; 
-
+        if (!isLoaded) return;
         localStorage.setItem(cartKey, JSON.stringify(cartItems));
     }, [cartItems, cartKey, isLoaded]);
 
@@ -44,7 +35,8 @@ export const CartProvider = ({ children }) => {
                     item._id === food._id ? { ...item, quantity: item.quantity + 1 } : item
                 );
             }
-            return [...prevItems, { ...food, quantity: 1 }];
+            // ✅ FIX: Ensure price exists, default to 150 if missing
+            return [...prevItems, { ...food, price: food.price || 150, quantity: 1 }];
         });
     };
 
@@ -52,14 +44,24 @@ export const CartProvider = ({ children }) => {
         setCartItems((prevItems) => prevItems.filter(item => item._id !== foodId));
     };
 
+    // ✅ NEW FUNCTION: Add this to fix the + / - buttons
+    const updateQuantity = (itemId, newQuantity) => {
+        if (newQuantity < 1) return;
+        setCartItems(prev => prev.map(item => 
+            item._id === itemId ? { ...item, quantity: newQuantity } : item
+        ));
+    };
+
     const clearCart = () => {
         setCartItems([]);
     };
 
-    const totalPrice = cartItems.reduce((total, item) => total + (item.price || 100) * item.quantity, 0);
+    // Use safe math here too
+    const totalPrice = cartItems.reduce((total, item) => total + (item.price || 150) * item.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, totalPrice }}>
+        // ✅ Export updateQuantity here
+        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, clearCart, updateQuantity, totalPrice }}>
             {children}
         </CartContext.Provider>
     );
