@@ -9,16 +9,16 @@ export const axiosInstance = axios.create({
     withCredentials: true
 });
 // Add the Interceptor (This attaches the token to every request)
-axiosInstance.interceptors.request.use((config) => {
-    // 1. READ THE TOKEN YOU SAVED IN APP.JSX
-    const token = localStorage.getItem("zomatoToken"); 
-    
-    // 2. ATTACH IT TO THE HEADER
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("zomatoToken"); // Make sure this matches App.jsx
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-}, (error) => {
-    return Promise.reject(error);
-});
+);
 export default axiosInstance;

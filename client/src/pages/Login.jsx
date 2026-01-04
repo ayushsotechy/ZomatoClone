@@ -81,9 +81,14 @@ const Login = () => {
     };
 
     const handleGoogleLogin = () => {
+        // 1. Determine the Role based on the active Tab
+        const role = isPartner ? "partner" : "user";
+        
+        // 2. Attach it to the URL as a query parameter
         const googleAuthUrl = window.location.hostname === 'localhost' 
-          ? "http://localhost:4444/auth/google"
-          : "/auth/google";
+          ? `http://localhost:4444/auth/google?role=${role}`
+          : `/auth/google?role=${role}`;
+          
         window.location.href = googleAuthUrl; 
     };
 

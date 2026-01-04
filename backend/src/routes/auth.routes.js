@@ -21,7 +21,16 @@ router.get('/me', userPartnerMiddleware, registerController.getMyProfile);
 // --- GOOGLE AUTH ROUTES ---
 
 // 1. Start Login
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", (req, res, next) => {
+  // Extract role from frontend query, default to 'user'
+  const role = req.query.role || 'user';
+  
+  // Pass it as 'state' to Google
+  passport.authenticate("google", { 
+    scope: ["profile", "email"],
+    state: role 
+  })(req, res, next);
+});
 
 // 2. Callback
 router.get(
