@@ -43,3 +43,17 @@ body, html {
     background-color: #555; /* Lighter Grey on Hover */
   }
 }
+/* --- FIX: Force Dark Background on Autofill --- */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #111 inset !important; /* Matches bg-[#111] */
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Ensure the text caret is white */
+input {
+    caret-color: white;
+}

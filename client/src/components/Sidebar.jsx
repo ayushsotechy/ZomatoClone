@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -8,6 +8,9 @@ const Sidebar = () => {
   const { cartItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // ✅ NEW: State for Mobile Menu Toggle
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // --- HANDLE DISPLAY NAME ---
   const displayName = user?.username || user?.name || "User";
@@ -78,7 +81,6 @@ const Sidebar = () => {
               }
             />
 
-            {/* ✅ NEW: MY ORDERS TAB */}
             <NavItem 
               to="/orders" 
               active={location.pathname === '/orders'}
@@ -124,7 +126,7 @@ const Sidebar = () => {
                   </div>
                 </button>
                 
-                {/* Mini Logout Menu */}
+                {/* Mini Logout Menu (Desktop) */}
                 <button onClick={handleLogout} className="mt-2 text-xs text-red-500 hover:text-red-400 pl-4 lg:pl-14 font-bold uppercase tracking-wider">
                    Logout
                 </button>
@@ -147,7 +149,6 @@ const Sidebar = () => {
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
         </Link>
 
-        {/* ✅ NEW: MY ORDERS (Mobile) */}
         <Link to="/orders" className={`p-2 ${location.pathname === '/orders' ? 'text-white' : 'text-gray-400'}`}>
            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
@@ -159,12 +160,33 @@ const Sidebar = () => {
           {cartCount > 0 && <span className="absolute top-1 right-0 bg-red-600 text-[10px] w-4 h-4 rounded-full flex items-center justify-center text-white">{cartCount}</span>}
         </Link>
         
-        {/* MOBILE PROFILE AVATAR */}
-        <div className="p-2">
-            <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs text-white">
+        {/* ✅ MOBILE PROFILE + LOGOUT MENU */}
+        <div className="relative p-2">
+            {/* 1. Popup Menu (Shows only when showMobileMenu is true) */}
+            {showMobileMenu && (
+                <div className="absolute bottom-14 right-0 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl p-3 min-w-[140px] flex flex-col gap-2 z-[60] animate-in slide-in-from-bottom-2 fade-in">
+                    <p className="text-xs text-gray-400 font-bold px-2 mb-1 truncate">@{displayName}</p>
+                    <button 
+                       onClick={handleLogout} 
+                       className="text-red-500 text-xs font-bold hover:bg-white/5 p-2 rounded-lg text-left flex items-center gap-2"
+                    >
+                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                       </svg>
+                       Logout
+                    </button>
+                </div>
+            )}
+            
+            {/* 2. Avatar Button (Toggles Menu) */}
+            <button 
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className={`w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white border transition-all ${showMobileMenu ? 'border-white ring-2 ring-white/20' : 'border-white/20'}`}
+            >
                 {displayInitial}
-            </div>
+            </button>
         </div>
+
       </nav>
     </>
   );
