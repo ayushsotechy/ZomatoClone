@@ -59,3 +59,13 @@ export const replyToComment = async (foodId, commentId, text) => {
     });
     return response.data;
 };
+
+export const toggleCommentLike = async (foodId, commentId, replyId = null) => {
+    // We send replyId as null if it's a main comment
+    const response = await axiosInstance.put('/food/comment/like', { 
+        foodId, 
+        commentId, 
+        replyId 
+    });
+    return response.data;
+};

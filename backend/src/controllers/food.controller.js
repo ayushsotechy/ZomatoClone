@@ -124,9 +124,46 @@ async function replyToComment(req,res){
   }
 }
 
+async function toggleCommentLike(req,res){
+  try {
+    const { foodId, commentId, replyId } = req.body;
+    const userId = req.user._id;
+
+    const food = await foodModel.findById(foodId);
+    if (!food) return res.status(404).json({ message: "Food not found" });
+
+    // 1. Find the Main Comment
+    const comment = food.comments.id(commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    // 2. Determine Target (Comment vs Reply)
+    let target = comment;
+    if (replyId) {
+      target = comment.replies.id(replyId);
+      if (!target) return res.status(404).json({ message: "Reply not found" });
+    }
+
+    // 3. Toggle Logic
+    const index = target.likes.indexOf(userId);
+    if (index === -1) {
+      target.likes.push(userId); // Add Like
+    } else {
+      target.likes.splice(index, 1); // Remove Like
+    }
+
+    await food.save();
+    res.json({ success: true, likes: target.likes });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+}
+
 module.exports = {
     createFood,
     getAllFoods,
     getFoodsByPartner,
-    replyToComment
+    replyToComment,
+    toggleCommentLike,
 };

@@ -4,6 +4,7 @@ const foodController = require("../controllers/food.controller");
 const authMiddleware = require('../middlewares/auth.middleware'); 
 const upload = require('../middlewares/upload.middleware');
 const foodModel = require('../models/food.model'); 
+// const { toggleCommentLike } = require('../controllers/food.controller');
 
 // 1. Create Food (Upload Reel)
 router.post('/create', 
@@ -64,7 +65,6 @@ router.post('/comment/:id', async (req, res) => {
 // 5. Get Partner Foods
 router.get('/partner/:partnerId', foodController.getFoodsByPartner);
 
-// 6. Reply (CRITICAL FIX ADDED BELOW)
-// We added 'authMiddleware.userPartnerMiddleware' so the controller knows who is replying
+router.put('/comment/like', authMiddleware.userPartnerMiddleware, foodController.toggleCommentLike);
 
 module.exports = router;

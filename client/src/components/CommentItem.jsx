@@ -1,6 +1,64 @@
-import { useState } from "react";
-import { replyToComment } from "../api/food";
+import { useState, useEffect } from "react"; // ✅ Import useEffect
+import { replyToComment, toggleCommentLike } from "../api/food"; 
 
+// --- 1. UPDATED HELPER COMPONENT ---
+const CommentLikeButton = ({ data, foodId, commentId, replyId }) => {
+  const user = JSON.parse(localStorage.getItem('zomatoUser'));
+  const userId = user?.id || user?._id;
+  
+  // Initial check
+  const isInitiallyLiked = data.likes?.includes(userId) || false;
+
+  const [liked, setLiked] = useState(isInitiallyLiked);
+  const [likeCount, setLikeCount] = useState(data.likes?.length || 0);
+
+  // ✅ NEW: This Effect ensures the button updates when you switch accounts
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem('zomatoUser'));
+    const currentUserId = currentUser?.id || currentUser?._id;
+    
+    // Check if the NEW logged-in user is in the likes array
+    const isLikedNow = data.likes?.includes(currentUserId) || false;
+    
+    setLiked(isLikedNow);
+    setLikeCount(data.likes?.length || 0);
+  }, [data.likes]); // Run this whenever the likes data changes
+
+  const handleToggleLike = async (e) => {
+    e.stopPropagation(); 
+    
+    // 1. Optimistic Update
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    setLikeCount(newLikedState ? likeCount + 1 : likeCount - 1);
+
+    try {
+        // 2. Call the Backend API
+        await toggleCommentLike(foodId, commentId, replyId);
+    } catch (error) {
+        // 3. Revert if API fails
+        console.error("Like failed", error);
+        setLiked(!newLikedState);
+        setLikeCount(newLikedState ? likeCount - 1 : likeCount + 1);
+    }
+  };
+
+  return (
+    <button 
+       onClick={handleToggleLike}
+       className={`flex items-center gap-1 transition-colors group ${liked ? 'text-pink-500' : 'text-gray-400 hover:text-white'}`}
+    >
+       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"} stroke="currentColor" strokeWidth={liked ? "0" : "2"} className="w-3.5 h-3.5 group-hover:scale-110 transition-transform">
+         <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+       </svg>
+       <span className="text-[10px] font-bold">
+          {likeCount > 0 ? likeCount : "Like"}
+       </span>
+    </button>
+  );
+};
+
+// --- MAIN COMPONENT ---
 const CommentItem = ({ foodId, comment, refreshData }) => {
   const [activeReplyId, setActiveReplyId] = useState(null); 
   const [replyText, setReplyText] = useState("");
@@ -64,12 +122,13 @@ const CommentItem = ({ foodId, comment, refreshData }) => {
           </div>
 
           <div className="flex items-center gap-3 mt-2">
-             <button className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors group">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 group-hover:scale-110 transition-transform">
-                  <path d="M7.493 18.75c-.425 0-.82-.236-.975-.632A7.48 7.48 0 016 15.375c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.965C10.178 8.19 10.965 6.12 12 5.25c1.035-.87 1.963-1.185 2.802-1.09 1.103.125 1.947 1.024 1.947 2.136v1.389c0 .563.195 1.112.546 1.56a4.49 4.49 0 001.524 1.188c.933.443 1.622 1.315 1.68 2.383a4.494 4.494 0 01-1.235 3.55c-.466.488-.872.996-1.218 1.52-.346.525-.841.99-1.477 1.383-.635.392-1.37.59-2.17.59h-6.385zM2.25 18.75a.75.75 0 00.75.75h1.5a.75.75 0 00.75-.75v-6a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v6z" />
-                </svg>
-                <span className="text-[10px] font-bold">Like</span>
-             </button>
+             <CommentLikeButton 
+                data={comment} 
+                foodId={foodId} 
+                commentId={comment._id} 
+                replyId={null} 
+             />
+             
              <button onClick={() => handleStartReply(comment.user, comment._id)} className="text-[10px] font-bold text-gray-400 hover:text-white transition-colors">
                 Reply
              </button>
@@ -82,17 +141,12 @@ const CommentItem = ({ foodId, comment, refreshData }) => {
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-3 mt-0"> 
           {comment.replies.map((reply, index) => {
-            
-            // 💡 TRICK: If text starts with '@', we assume it's a "Reply to Reply"
             const isReplyingToSomeone = reply.text.trim().startsWith("@");
 
             return (
               <div key={index} className={`flex gap-3 relative pt-3 ${isReplyingToSomeone ? "pl-6" : ""}`}>
-                 
-                 {/* The "L" Connector: Logic to stretch it if indented */}
                  <div className={`absolute -top-5 bottom-5 w-6 border-l-2 border-b-2 border-gray-700 rounded-bl-2xl ${isReplyingToSomeone ? "-left-3" : "-left-3"}`}></div>
 
-                 {/* Reply Avatar */}
                  <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center text-[9px] shrink-0 mt-1 relative z-10">
                     {getInitial(reply.user)}
                  </div>
@@ -103,14 +157,14 @@ const CommentItem = ({ foodId, comment, refreshData }) => {
                       <p className="text-xs text-gray-200">{reply.text}</p>
                    </div>
 
-                   {/* Action Row */}
                    <div className="flex items-center gap-3 mt-1.5">
-                      <button className="flex items-center gap-1 text-gray-500 hover:text-white transition-colors group">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 group-hover:scale-110 transition-transform">
-                            <path d="M7.493 18.75c-.425 0-.82-.236-.975-.632A7.48 7.48 0 016 15.375c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.965C10.178 8.19 10.965 6.12 12 5.25c1.035-.87 1.963-1.185 2.802-1.09 1.103.125 1.947 1.024 1.947 2.136v1.389c0 .563.195 1.112.546 1.56a4.49 4.49 0 001.524 1.188c.933.443 1.622 1.315 1.68 2.383a4.494 4.494 0 01-1.235 3.55c-.466.488-.872.996-1.218 1.52-.346.525-.841.99-1.477 1.383-.635.392-1.37.59-2.17.59h-6.385zM2.25 18.75a.75.75 0 00.75.75h1.5a.75.75 0 00.75-.75v-6a.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75v6z" />
-                          </svg>
-                          <span className="text-[9px] font-bold">Like</span>
-                      </button>
+                      <CommentLikeButton 
+                          data={reply} 
+                          foodId={foodId} 
+                          commentId={comment._id} 
+                          replyId={reply._id}
+                      />
+
                       <button onClick={() => handleStartReply(reply.user, reply._id || index)} className="text-[10px] font-bold text-gray-500 hover:text-white transition-colors">
                           Reply
                       </button>
