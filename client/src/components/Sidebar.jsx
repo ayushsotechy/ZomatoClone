@@ -9,13 +9,10 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // ✅ NEW: State for Mobile Menu Toggle
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  // --- HANDLE DISPLAY NAME ---
   const displayName = user?.username || user?.name || "User";
   const displayInitial = displayName[0]?.toUpperCase() || "U";
-  // ---------------------------
 
   const handleLogout = () => {
     logout();
@@ -24,13 +21,15 @@ const Sidebar = () => {
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Helper to highlight active link
   const NavItem = ({ to, icon, label, active }) => (
     <Link 
       to={to} 
       className={`group flex items-center gap-4 p-3 rounded-xl transition-all duration-200 ${active ? 'font-bold text-white bg-white/10' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}
     >
-      {icon}
+      {/* Icon Wrapper ensures consistent width in collapsed mode */}
+      <div className="w-7 flex justify-center">
+        {icon}
+      </div>
       <span className="text-base tracking-wide hidden lg:block">{label}</span>
     </Link>
   );
@@ -38,20 +37,20 @@ const Sidebar = () => {
   return (
     <>
       {/* --- DESKTOP SIDEBAR (Fixed Left) --- */}
-      <aside className="hidden md:flex flex-col fixed top-0 left-0 h-screen w-20 lg:w-64 bg-black border-r border-gray-800 z-50 px-3 py-6 justify-between">
+      <aside className="hidden md:flex flex-col fixed top-0 left-0 h-screen w-20 lg:w-64 bg-black border-r border-gray-800 z-50 px-3 py-6 justify-between transition-all duration-300">
         
         {/* Top Section */}
         <div className="flex flex-col gap-8">
           
           {/* LOGO */}
           <Link to="/" className="px-3 lg:px-4 mb-2 flex items-center gap-3">
-             {/* Small Logo for Tablet */}
-             <div className="lg:hidden bg-gradient-to-tr from-red-600 to-orange-500 p-2 rounded-lg">
+             {/* Small Logo for Tablet (Icon Mode) */}
+             <div className="lg:hidden bg-gradient-to-tr from-red-600 to-orange-500 p-2 rounded-lg shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
                 </svg>
              </div>
-             {/* Full Logo for Desktop */}
+             {/* Full Logo for Desktop (Expanded Mode) */}
              <span className="hidden lg:block text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-orange-500 tracking-tight font-sans">
                 FlavorFeed
              </span>
@@ -112,34 +111,50 @@ const Sidebar = () => {
           </nav>
         </div>
 
-        {/* Bottom Section: Profile & More */}
-        <div className="flex flex-col gap-4">
+        {/* Bottom Section: Profile & Logout */}
+        <div className="flex flex-col gap-3">
            {user ? (
-             <div className="group relative">
-                <button className="flex items-center gap-4 p-3 w-full rounded-xl hover:bg-white/10 transition-all">
-                  <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white border border-white/20">
+             <>
+               {/* Profile Button */}
+               <Link to="/orders" className="group flex items-center gap-4 p-3 w-full rounded-xl hover:bg-white/10 transition-all">
+                  <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white border border-white/20 shrink-0">
                      {displayInitial}
                   </div>
-                  <div className="hidden lg:flex flex-col items-start">
-                     <span className="text-sm font-bold text-white truncate max-w-[150px]">{displayName}</span>
+                  <div className="hidden lg:flex flex-col items-start overflow-hidden">
+                     <span className="text-sm font-bold text-white truncate max-w-[120px]">{displayName}</span>
                      <span className="text-[10px] text-gray-400">View Profile</span>
                   </div>
-                </button>
-                
-                {/* Mini Logout Menu (Desktop) */}
-                <button onClick={handleLogout} className="mt-2 text-xs text-red-500 hover:text-red-400 pl-4 lg:pl-14 font-bold uppercase tracking-wider">
+               </Link>
+               
+               {/* ✅ FIXED LOGOUT BUTTON */}
+               <button 
+                 onClick={handleLogout} 
+                 className="group flex items-center gap-4 p-3 w-full rounded-xl hover:bg-red-500/10 transition-all text-red-500 hover:text-red-400"
+                 title="Logout"
+               >
+                 {/* Icon visible on all screens */}
+                 <div className="w-7 flex justify-center shrink-0">
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                   </svg>
+                 </div>
+                 
+                 {/* Text only on large screens */}
+                 <span className="hidden lg:block text-xs font-bold uppercase tracking-wider">
                    Logout
-                </button>
-             </div>
+                 </span>
+               </button>
+             </>
            ) : (
              <Link to="/login" className="bg-white text-black font-bold py-3 px-4 rounded-xl text-center hover:bg-gray-200 transition">
-                Log In
+                <span className="lg:hidden">Log</span>
+                <span className="hidden lg:inline">Log In</span>
              </Link>
            )}
         </div>
       </aside>
 
-      {/* --- MOBILE BOTTOM BAR --- */}
+      {/* --- MOBILE BOTTOM BAR (Unchanged) --- */}
       <nav className="md:hidden fixed bottom-0 w-full bg-black border-t border-gray-800 z-50 flex justify-around items-center py-3 px-2 pb-5">
         <Link to="/" className={`p-2 ${location.pathname === '/' ? 'text-white' : 'text-gray-400'}`}>
           <svg xmlns="http://www.w3.org/2000/svg" fill={location.pathname === '/' ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
@@ -160,9 +175,7 @@ const Sidebar = () => {
           {cartCount > 0 && <span className="absolute top-1 right-0 bg-red-600 text-[10px] w-4 h-4 rounded-full flex items-center justify-center text-white">{cartCount}</span>}
         </Link>
         
-        {/* ✅ MOBILE PROFILE + LOGOUT MENU */}
         <div className="relative p-2">
-            {/* 1. Popup Menu (Shows only when showMobileMenu is true) */}
             {showMobileMenu && (
                 <div className="absolute bottom-14 right-0 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl p-3 min-w-[140px] flex flex-col gap-2 z-[60] animate-in slide-in-from-bottom-2 fade-in">
                     <p className="text-xs text-gray-400 font-bold px-2 mb-1 truncate">@{displayName}</p>
@@ -178,7 +191,6 @@ const Sidebar = () => {
                 </div>
             )}
             
-            {/* 2. Avatar Button (Toggles Menu) */}
             <button 
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
                 className={`w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-xs font-bold text-white border transition-all ${showMobileMenu ? 'border-white ring-2 ring-white/20' : 'border-white/20'}`}
