@@ -132,23 +132,28 @@ async function logoutFoodPartner(req,res){
   res.clearCookie("token");
   return res.status(200).json({message:"Logout successful"});
 }
-getMyProfile = async (req, res) => {
+const getMyProfile = async (req, res) => {
   try {
-    // Debugging: Check if middleware worked
-    // console.log("User attached by middleware:", req.user);
-
     if (!req.user) {
         return res.status(404).json({ message: "User not found in request" });
     }
 
+    // 1. Check if the user exists in the FoodPartner collection
+    // (req.user._id comes from the middleware)
+    const isPartner = await foodPartnerModel.findById(req.user._id);
+
+    // 2. Determine Role
+    const role = isPartner ? "partner" : "user";
+
+    // 3. Send Response
     res.status(200).json({
       _id: req.user._id,
       username: req.user.username,
       email: req.user.email,
-      role: "user",
+      role: role, // ✅ NOW DYNAMIC
     });
   } catch (error) {
-    console.error("Error in getMyProfile:", error); // <--- This will print the error to your terminal
+    console.error("Error in getMyProfile:", error); 
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };

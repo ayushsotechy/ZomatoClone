@@ -1,22 +1,43 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-require("./config/passport.js"); // Loads the passport config
+const passport = require("passport"); // 👈 Import passport package
+require("dotenv").config(); // Ensure env variables are loaded
+require("./config/passport.js"); // Loads your specific strategy config
 
 const app = express();
-app.use(cors({
-    origin: "http://localhost:5173", // Allow your React frontend
-    credentials: true               // Allow cookies to be sent
-}));
-app.use(express.json());
 
+// ✅ UPDATE CORS FOR DEPLOYMENT
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://flavorfeed.in", 
+  "https://www.flavorfeed.in"
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true
+}));
+
+app.use(express.json());
 app.use(cookieParser());
-//Importing Routes
+app.use(passport.initialize()); // 👈 CRITICAL: Add this line!
+
+// Importing Routes
 const authRoutes = require('./routes/auth.routes');
-const foodRoutes = require('./routes/food.routes')
+const foodRoutes = require('./routes/food.routes');
 const paymentRoutes = require("./routes/payment.routes");
 
 app.use('/auth', authRoutes);
-app.use('/food',foodRoutes);
+app.use('/food', foodRoutes);
 app.use("/payment", paymentRoutes);
-module.exports=app
+
+module.exports = app;

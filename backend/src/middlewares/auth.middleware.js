@@ -28,10 +28,8 @@ async function authFoodPartnerMiddleware(req, res, next) {
 }
 async function userPartnerMiddleware(req, res, next) {
   try {
-    // 1. Try to get token from Cookies OR Authorization Header
+    // 1. Get Token (Cookie OR Header)
     let token = req.cookies.token;
-    
-    // If not in cookie, check the header (Bearer token)
     if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     }
@@ -42,18 +40,25 @@ async function userPartnerMiddleware(req, res, next) {
 
     // 2. Verify Token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // 3. Handle Mismatch: Google Auth uses 'id', Standard Login uses 'userId'
     const currentUserId = decoded.userId || decoded.id; 
 
-    const existingUser = await user.findById(currentUserId);
+    // 3. CHECK USER DATABASE
+    let account = await user.findById(currentUserId);
 
-    if (!existingUser) {
-      return res.status(401).json({ message: "Unauthorized access" });
+    // 4. IF NOT USER, CHECK PARTNER DATABASE
+    if (!account) {
+        account = await foodPartner.findById(currentUserId);
     }
 
-    req.user = existingUser;
+    // 5. If still not found in EITHER, reject
+    if (!account) {
+      return res.status(401).json({ message: "Unauthorized access: User not found." });
+    }
+
+    // 6. Attach to req.user (Works for both!)
+    req.user = account;
     next();
+
   } catch (error) {
     console.log("Auth Middleware Error:", error.message);
     return res.status(401).json({ message: "Unauthorized" });
