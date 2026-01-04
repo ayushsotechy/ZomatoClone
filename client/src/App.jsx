@@ -9,7 +9,7 @@ import Cart from './pages/Cart';
 import RestaurantProfile from './pages/RestaurantProfile';
 import { useAuth } from './context/AuthContext';
 import { getMyProfile } from './api/auth';
-
+import MyOrders from './pages/MyOrders';
 function App() {
   const { user, login } = useAuth(); // Make sure to destructure 'login' if needed for state updates
   const location = useLocation();
@@ -94,6 +94,7 @@ function App() {
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><PartnerDashboard /></ProtectedRoute>} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+          <Route path="/orders" element={<MyOrders />} />
           <Route path="/restaurant/:id" element={<RestaurantProfile />} />
           <Route path="*" element={<Navigate to={currentUser.role === 'partner' ? "/dashboard" : "/"} />} />
         </Routes>

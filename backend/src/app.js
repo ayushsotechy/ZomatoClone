@@ -14,7 +14,9 @@ app.use(cookieParser());
 //Importing Routes
 const authRoutes = require('./routes/auth.routes');
 const foodRoutes = require('./routes/food.routes')
+const paymentRoutes = require("./routes/payment.routes");
 
 app.use('/auth', authRoutes);
 app.use('/food',foodRoutes);
+app.use("/payment", paymentRoutes);
 module.exports=app
