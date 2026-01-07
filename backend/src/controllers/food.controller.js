@@ -73,54 +73,77 @@ async function getAllFoods(req,res){
 async function getFoodsByPartner(req, res) {
     try {
         const { partnerId } = req.params;
-        const foods = await foodDao.getFoodsByPartner(partnerId);
         
-        if (!foods || foods.length === 0) {
+        const foods = await foodModel.find({ foodPartner: partnerId })
+            .populate("foodPartner", "username name profileImage")
+            // 👇 ADD THIS MISSING POPULATION BLOCK
+            .populate({
+                path: "comments",
+                populate: [
+                    { path: "user", select: "username name profilePic" },       // For Main Comments
+                    { path: "replies.user", select: "username name profilePic" } // For Replies
+                ]
+            })
+            // 👆
+            .sort({ createdAt: -1 });
+        
+        if (!foods) {
             return res.status(404).json({ message: "No foods found for this partner" });
         }
 
         res.status(200).json({
             message: "Partner foods fetched",
             data: foods,
-            partner: foods[0].foodPartner // Send partner details separately for easy access
+            partner: foods[0]?.foodPartner 
         });
     } catch (error) {
+        console.error("Error fetching partner foods:", error);
         res.status(500).json({ message: "Error fetching partner foods" });
     }
 }
-async function replyToComment(req,res){
-    try {
+async function replyToComment(req, res) {
+  try {
     const { foodId, commentId, text } = req.body;
-    
-    // Check if user exists (Handling both User and Partner logins)
+
     const userId = req.user?._id || req.foodie?._id;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const food = await foodModel.findById(foodId);
-    if (!food) return res.status(404).json({ message: "Food not found" });
-
-    const comment = food.comments.id(commentId); 
-    if (!comment) return res.status(404).json({ message: "Comment not found" });
-
-    // --- SAFETY CHECK FOR OLD DATA ---
-    // If 'replies' array doesn't exist yet, create it!
-    if (!comment.replies) {
-        comment.replies = [];
+    if (!food) {
+      return res.status(404).json({ message: "Food not found" });
     }
-    // ---------------------------------
+
+    const comment = food.comments.id(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
 
     comment.replies.push({
       user: userId,
-      text: text,
+      text,
       createdAt: new Date()
     });
 
     await food.save();
 
-    res.status(200).json({ message: "Reply added!", food });
+    // 🔥 CRITICAL FIX: Populate before sending back
+    await food.populate({
+      path: "comments",
+      populate: [
+        { path: "user", select: "username name profilePic" },
+        { path: "replies.user", select: "username name profilePic" }
+      ]
+    });
+
+    res.status(200).json({
+      success: true,
+      comments: food.comments
+    });
   } catch (error) {
-    console.error("Reply Error:", error); // Print error to terminal so you can see it
-    res.status(500).json({ message: "Server Error", error: error.message });
+    console.error("Reply Error:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 }
 

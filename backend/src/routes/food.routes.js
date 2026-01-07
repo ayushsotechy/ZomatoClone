@@ -47,21 +47,33 @@ router.post('/like/:id', async (req, res) => {
 
 // 4. Comment on a Reel
 router.post('/comment/:id', async (req, res) => {
-    try {
-        const { userId, text } = req.body;
-        const food = await foodModel.findById(req.params.id);
-        
-        if (!food) return res.status(404).json({ message: "Food not found" });
+  try {
+    const { userId, text } = req.body;
 
-        food.comments.push({ user: userId, text });
-        await food.save();
-        
-        res.json({ success: true, comments: food.comments });
-    } catch (err) {
-        res.status(500).json({ message: "Error commenting" });
-    }
+    const food = await foodModel.findById(req.params.id);
+    if (!food) return res.status(404).json({ message: "Food not found" });
+
+    food.comments.push({ user: userId, text });
+    await food.save();
+
+    // 🔥 CRITICAL FIX: populate comments before returning
+    await food.populate({
+      path: "comments",
+      populate: [
+        { path: "user", select: "username name profilePic" },
+        { path: "replies.user", select: "username name profilePic" }
+      ]
+    });
+
+    res.json({
+      success: true,
+      comments: food.comments
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error commenting" });
+  }
 });
-
 // 5. Get Partner Foods
 router.get('/partner/:partnerId', foodController.getFoodsByPartner);
 

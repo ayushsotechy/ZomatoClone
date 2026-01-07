@@ -59,7 +59,7 @@ const CommentLikeButton = ({ data, foodId, commentId, replyId }) => {
 };
 
 // --- MAIN COMPONENT ---
-const CommentItem = ({ foodId, comment, refreshData }) => {
+const CommentItem = ({ foodId, comment, setCommentsList }) => {
   const [activeReplyId, setActiveReplyId] = useState(null); 
   const [replyText, setReplyText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,20 +72,25 @@ const CommentItem = ({ foodId, comment, refreshData }) => {
     setActiveReplyId(id); 
   };
 
-  const handleReplySubmit = async () => {
-    if (!replyText.trim()) return;
-    try {
-      setLoading(true);
-      await replyToComment(foodId, comment._id, replyText);
-      setReplyText("");
-      setActiveReplyId(null); 
-      refreshData();
-    } catch (error) {
-      console.error("Failed to reply:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleReplySubmit = async () => {
+  if (!replyText.trim()) return;
+
+  try {
+    setLoading(true);
+
+    const res = await replyToComment(foodId, comment._id, replyText);
+
+    // 🔥 THIS IS THE MISSING LINE
+    setCommentsList(res.comments);
+
+    setReplyText("");
+    setActiveReplyId(null);
+  } catch (error) {
+    console.error("Failed to reply:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const ReplyInput = () => (
     <div className="mt-3 flex gap-2 animate-in fade-in duration-200 pl-2 relative z-10">

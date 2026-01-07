@@ -15,6 +15,12 @@ const ReelModal = ({ video, onClose, refreshData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const videoRef = useRef(null);
 
+  // ✅ FIX: Robust Uploader Name Logic
+  // Check foodPartner first (Profile Reels), then user (Home Reels)
+  const uploader = video?.foodPartner || video?.user || {};
+  const uploaderName = uploader.username || uploader.name || "Unknown";
+  const uploaderInitial = uploaderName[0]?.toUpperCase() || "R";
+
   useEffect(() => {
     setIsVisible(true);
     document.body.style.overflow = 'hidden';
@@ -22,6 +28,7 @@ const ReelModal = ({ video, onClose, refreshData }) => {
     if (video) {
         setLikesCount(video.likes?.length || 0);
         const currentUserId = user?._id || user?.id;
+        
         if (currentUserId && video.likes?.some(id => String(id) === String(currentUserId))) {
             setIsLiked(true);
         } else {
@@ -66,6 +73,8 @@ const ReelModal = ({ video, onClose, refreshData }) => {
         });
         setCommentsList(res.data.comments); 
         setCommentText(""); 
+        
+        // ✅ CRITICAL: This updates the list in the parent (Profile Page)
         if (refreshData) refreshData(); 
     } catch (error) {
         console.error("Failed to post comment", error);
@@ -77,19 +86,16 @@ const ReelModal = ({ video, onClose, refreshData }) => {
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`} onClick={handleClose}>
       
-      {/* Close Button */}
       <button onClick={handleClose} className="absolute top-4 right-4 p-2 bg-zinc-800/80 hover:bg-zinc-700 text-white rounded-full transition-all z-50">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
 
-      {/* Main Container */}
       <div 
         className={`flex flex-col md:flex-row w-full max-w-6xl h-[90vh] md:h-[85vh] bg-black rounded-xl overflow-hidden shadow-2xl border border-zinc-800 transform transition-all duration-300 ease-out ${isVisible ? "scale-100 translate-y-0" : "scale-95 translate-y-10"}`}
         onClick={(e) => e.stopPropagation()} 
       >
         {/* LEFT: Video Player */}
         <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden h-[40vh] md:h-full group">
-           {/* Ambient Blur */}
            <div className="absolute inset-0 opacity-20 blur-3xl scale-110 pointer-events-none">
                 <video src={video.videoUrl || video.video} className="w-full h-full object-cover" muted loop />
            </div>
@@ -111,11 +117,11 @@ const ReelModal = ({ video, onClose, refreshData }) => {
            <div className="p-4 border-b border-zinc-800 flex items-start gap-3 bg-[#09090b]">
               <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-orange-500 to-purple-500 p-[2px] shrink-0">
                   <div className="w-full h-full rounded-full bg-black flex items-center justify-center font-bold text-xs text-white">
-                     {video.user?.username?.[0]?.toUpperCase() || "R"}
+                     {uploaderInitial}
                   </div>
               </div>
               <div className="min-w-0">
-                  <h3 className="font-bold text-sm text-white truncate">@{video.user?.username || "Restaurant"}</h3>
+                  <h3 className="font-bold text-sm text-white truncate">@{uploaderName}</h3>
                   <p className="text-xs text-zinc-400 mt-0.5 line-clamp-2">{video.desc || video.name}</p>
               </div>
            </div>
@@ -125,11 +131,11 @@ const ReelModal = ({ video, onClose, refreshData }) => {
               {commentsList.length > 0 ? (
                  commentsList.map((comment, index) => (
                     <CommentItem 
-                       key={comment._id || index} 
-                       comment={comment} 
-                       foodId={video._id} 
-                       refreshData={refreshData}
-                    />
+  key={comment._id || index} 
+  comment={comment} 
+  foodId={video._id} 
+  setCommentsList={setCommentsList}   // ✅ ADD
+/>
                  ))
               ) : (
                  <div className="h-full flex flex-col items-center justify-center text-zinc-600 opacity-60">
