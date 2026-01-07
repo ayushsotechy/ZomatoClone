@@ -15,8 +15,7 @@ const ReelModal = ({ video, onClose, refreshData }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const videoRef = useRef(null);
 
-  // ✅ FIX: Robust Uploader Name Logic
-  // Check foodPartner first (Profile Reels), then user (Home Reels)
+  // Uploader Name Logic
   const uploader = video?.foodPartner || video?.user || {};
   const uploaderName = uploader.username || uploader.name || "Unknown";
   const uploaderInitial = uploaderName[0]?.toUpperCase() || "R";
@@ -71,10 +70,14 @@ const ReelModal = ({ video, onClose, refreshData }) => {
             userId: user._id || user.id,
             text: commentText
         });
-        setCommentsList(res.data.comments); 
-        setCommentText(""); 
         
-        // ✅ CRITICAL: This updates the list in the parent (Profile Page)
+        // ✅ FIX: Instant Update Logic
+        // We set the list directly from the response, so it appears without refresh
+        if (res.data && res.data.comments) {
+            setCommentsList(res.data.comments);
+        }
+        
+        setCommentText(""); 
         if (refreshData) refreshData(); 
     } catch (error) {
         console.error("Failed to post comment", error);
@@ -131,11 +134,13 @@ const ReelModal = ({ video, onClose, refreshData }) => {
               {commentsList.length > 0 ? (
                  commentsList.map((comment, index) => (
                     <CommentItem 
-  key={comment._id || index} 
-  comment={comment} 
-  foodId={video._id} 
-  setCommentsList={setCommentsList}   // ✅ ADD
-/>
+                       key={comment._id || index} 
+                       comment={comment} 
+                       foodId={video._id} 
+                       refreshData={refreshData}
+                       // ✅ CRITICAL: Pass setter so replies update the list instantly
+                       setCommentsList={setCommentsList} 
+                    />
                  ))
               ) : (
                  <div className="h-full flex flex-col items-center justify-center text-zinc-600 opacity-60">
