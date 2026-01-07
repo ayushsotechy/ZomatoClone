@@ -17,6 +17,7 @@ router.get('/food-partner/logout', registerController.logoutFoodPartner);
 // ✅ PROFILE ROUTE (Uses the fixed controller)
 router.get('/me', userPartnerMiddleware, registerController.getMyProfile);
 
+router.get('/get-user/:id', registerController.getUserById);
 
 // --- GOOGLE AUTH ROUTES ---
 

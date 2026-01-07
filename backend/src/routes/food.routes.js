@@ -66,5 +66,6 @@ router.post('/comment/:id', async (req, res) => {
 router.get('/partner/:partnerId', foodController.getFoodsByPartner);
 
 router.put('/comment/like', authMiddleware.userPartnerMiddleware, foodController.toggleCommentLike);
+router.get('/user/:partnerId', foodController.getFoodsByPartner);
 
 module.exports = router;

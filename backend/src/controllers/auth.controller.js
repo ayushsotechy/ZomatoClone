@@ -2,6 +2,7 @@ const userModel = require("../models/user.model");
 const foodPartnerModel = require("../models/foodpartner.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { get } = require("mongoose");
 
 async function registerUser(req, res) {
   const { username, email, password } = req.body;
@@ -157,6 +158,28 @@ const getMyProfile = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
+const getUserById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1. Try finding a Partner first
+    let account = await foodPartnerModel.findById(id).select("-password");
+    
+    // 2. If not found, check if it's a regular User
+    if (!account) {
+        account = await userModel.findById(id).select("-password");
+    }
+
+    if (!account) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(account);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
 module.exports = { 
     registerUser, 
     loginUser,
@@ -164,5 +187,6 @@ module.exports = {
     registerFoodPartner,
     loginFoodPartner,
     logoutFoodPartner,
-    getMyProfile
+    getMyProfile,
+    getUserById
 };
