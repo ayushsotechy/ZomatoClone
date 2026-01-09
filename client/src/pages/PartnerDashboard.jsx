@@ -1,21 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // ✅ Added Axios
 import { createFood } from '../api/food';
 import { useAuth } from '../context/AuthContext';
 
 const PartnerDashboard = () => {
     const { user } = useAuth();
     
-    // Form State
+    // --- LOCATION STATE ---
+    const [locationStatus, setLocationStatus] = useState("Detecting location...");
+
+    // --- FORM STATE ---
     const [name, setName] = useState('');
     const [desc, setDesc] = useState('');
     const [videoFile, setVideoFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     
-    // UI State
+    // --- UI STATE ---
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
-    // Handle File Selection
+    // ✅ EFFECT: AUTO-FETCH LOCATION ON LOAD
+    useEffect(() => {
+        const updateLocation = async (latitude, longitude) => {
+            try {
+                // 1. Get Token
+                const token = localStorage.getItem('token'); 
+                
+                // 2. Prepare Config (Always send cookies)
+                const config = {
+                    headers: {},
+                    withCredentials: true 
+                };
+
+                // ✅ FIX: Only add Authorization header if token is REAL
+                if (token && token !== "null" && token !== "undefined") {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+
+                // 3. Make Request
+                await axios.put('http://localhost:4444/auth/update-location', {
+                    lat: latitude,
+                    lng: longitude
+                }, config);
+
+                setLocationStatus("Location Synced ✅");
+                console.log("Restaurant Location Saved:", latitude, longitude);
+
+            } catch (error) {
+                console.error("Failed to update location on backend", error);
+                
+                if (error.response && error.response.status === 401) {
+                    setLocationStatus("Session Expired. Please Login.");
+                } else {
+                    setLocationStatus("Sync Failed ❌");
+                }
+            }
+        };
+        // 1. Check if Browser supports Geolocation
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    updateLocation(latitude, longitude);
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                    setLocationStatus("Location Denied 🚫");
+                }
+            );
+        } else {
+            setLocationStatus("No Geolocation Support");
+        }
+    }, []); // Empty dependency array = runs once on mount
+
+
+    // --- HANDLERS ---
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -24,7 +83,6 @@ const PartnerDashboard = () => {
         }
     };
 
-    // Handle Submit
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!videoFile || !name || !desc) {
@@ -76,11 +134,19 @@ const PartnerDashboard = () => {
                         <p className="text-gray-400 text-xs mt-1">Welcome back, <span className="text-white font-bold">{user?.username}</span></p>
                     </div>
                     
-                    <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-full shadow-lg">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">
-                            Partner Account
-                        </span>
+                    <div className="flex flex-col items-end gap-2">
+                        {/* Status Badge */}
+                        <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-full shadow-lg">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                            <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">
+                                Partner Account
+                            </span>
+                        </div>
+                        
+                        {/* ✅ Location Status Indicator */}
+                        <div className="text-[10px] font-mono text-gray-500 flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-md border border-white/5">
+                           <span>📡</span> {locationStatus}
+                        </div>
                     </div>
                 </div>
 

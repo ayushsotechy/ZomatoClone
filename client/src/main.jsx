@@ -5,6 +5,8 @@ import './index.css'
 import { BrowserRouter } from 'react-router-dom' 
 import { AuthProvider } from './context/AuthContext.jsx'
 import { CartProvider } from './context/CartContext.jsx' // 1. Import this
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

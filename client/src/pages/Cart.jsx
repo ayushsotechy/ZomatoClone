@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react'; // Added useState
 import { useCart } from '../context/CartContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { createPaymentOrder, verifyPayment } from '../api/payment'; // ✅ Import verifyPayment
+import { createPaymentOrder, verifyPayment } from '../api/payment';
+import LocationPicker from '../components/LocationPicker'; // ✅ Import the component
 
-// --- HELPER: Load Razorpay SDK Dynamically ---
+// --- HELPER: Load Razorpay SDK ---
 const loadRazorpayScript = () => {
     return new Promise((resolve) => {
         const script = document.createElement("script");
@@ -17,6 +18,9 @@ const loadRazorpayScript = () => {
 const Cart = () => {
   const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
   const navigate = useNavigate();
+  
+  // ✅ New State for Address
+  const [deliveryLocation, setDeliveryLocation] = useState(null);
 
   // Calculation Logic
   const itemTotal = cartItems.reduce((acc, item) => acc + ((item.price || 150) * item.quantity), 0);
@@ -26,43 +30,48 @@ const Cart = () => {
 
   // --- PAYMENT HANDLER ---
   const handlePayment = async () => {
-      // 1. Load the Script
+      // 1. Validation: Ensure Location is picked
+      if (!deliveryLocation) {
+          alert("Please select and confirm your delivery location on the map first! 📍");
+          return;
+      }
+
+      // 2. Load the Script
       const isLoaded = await loadRazorpayScript();
       if (!isLoaded) {
           alert("Razorpay SDK failed to load. Are you online?");
           return;
       }
 
-      // 2. Create Order on Backend
+      // 3. Create Order on Backend
       try {
           const order = await createPaymentOrder(grandTotal); 
           
-          // 3. Open Razorpay Options
           const options = {
-              key: "rzp_test_RzhFCVoEpKgm6C", // Your Test Key
+              key: "rzp_test_RzhFCVoEpKgm6C", 
               amount: order.amount,
               currency: "INR",
               name: "Flavor Feed",
               description: "Food Order",
               order_id: order.id, 
               
-              // ✅ 4. HANDLE SUCCESS & SAVE TO DB
               handler: async function (response) {
                   try {
-                      // Call Backend to Verify & Save Order
+                      // ✅ Send Location to Backend
                       await verifyPayment({
                           razorpay_payment_id: response.razorpay_payment_id,
                           cartItems: cartItems,
-                          totalAmount: grandTotal
+                          totalAmount: grandTotal,
+                          deliveryLocation: deliveryLocation // <--- Sending coordinates
                       });
 
                       alert("Order Placed Successfully! 🥘");
-                      clearCart(); // Empty the cart
-                      navigate('/orders'); // Redirect to Orders page
+                      clearCart(); 
+                      navigate('/orders'); 
                       
                   } catch (error) {
                       console.error("Order Save Failed:", error);
-                      alert("Payment succeeded, but order saving failed. Please contact support.");
+                      alert("Payment succeeded, but order saving failed.");
                   }
               },
               prefill: {
@@ -111,62 +120,66 @@ const Cart = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* --- LEFT: ITEMS --- */}
-          <div className="lg:col-span-2 space-y-4">
-            {cartItems.map((item) => (
-              <div key={item._id} className="bg-[#0f0f0f] border border-gray-800 p-4 rounded-2xl flex gap-4 items-center hover:border-gray-700 transition-colors">
-                
-                <div className="w-20 h-20 bg-gray-800 rounded-xl overflow-hidden shrink-0">
-                  {item.video ? (
-                    <video src={item.video} className="w-full h-full object-cover opacity-80" muted />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl">🍗</div>
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg text-white mb-1">{item.name}</h3>
-                  <p className="text-sm text-gray-400 mb-2">@{item.foodPartner?.username || "Restaurant"}</p>
-                  <div className="text-red-500 font-bold">₹{item.price || 150}</div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                   <div className="flex items-center bg-gray-800 rounded-lg p-1">
-                      <button 
-                        onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition"
-                        disabled={item.quantity <= 1}
-                      >-</button>
-                      <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition"
-                      >+</button>
-                   </div>
-                   
-                   <button 
-                     onClick={() => removeFromCart(item._id)}
-                     className="text-xs text-red-500 hover:text-red-400 hover:underline"
-                   >
-                     Remove
-                   </button>
-                </div>
-
-              </div>
-            ))}
+          {/* --- LEFT COLUMN: ITEMS & MAP --- */}
+          <div className="lg:col-span-2 space-y-6">
             
+            {/* 1. MAP SECTION (Placed here so user sees it first) */}
+            <LocationPicker onConfirm={setDeliveryLocation} />
+
+            {/* 2. CART ITEMS */}
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <div key={item._id} className="bg-[#0f0f0f] border border-gray-800 p-4 rounded-2xl flex gap-4 items-center hover:border-gray-700 transition-colors">
+                  
+                  <div className="w-20 h-20 bg-gray-800 rounded-xl overflow-hidden shrink-0">
+                    {item.video ? (
+                      <video src={item.video} className="w-full h-full object-cover opacity-80" muted />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">🍗</div>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg text-white mb-1">{item.name}</h3>
+                    <p className="text-sm text-gray-400 mb-2">@{item.foodPartner?.username || "Restaurant"}</p>
+                    <div className="text-red-500 font-bold">₹{item.price || 150}</div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                     <div className="flex items-center bg-gray-800 rounded-lg p-1">
+                        <button 
+                          onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition"
+                          disabled={item.quantity <= 1}
+                        >-</button>
+                        <span className="w-8 text-center font-bold text-sm">{item.quantity}</span>
+                        <button 
+                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition"
+                        >+</button>
+                     </div>
+                     
+                     <button 
+                       onClick={() => removeFromCart(item._id)}
+                       className="text-xs text-red-500 hover:text-red-400 hover:underline"
+                     >
+                       Remove
+                     </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
             <button 
               onClick={clearCart} 
               className="mt-6 flex items-center gap-2 px-5 py-2.5 border border-red-900/30 text-red-500 rounded-xl hover:bg-red-950/30 hover:border-red-500 hover:text-red-400 transition-all duration-300 text-sm font-bold group"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 group-hover:scale-110 transition-transform">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-              </svg>
               Clear Cart
             </button>
           </div>
 
-          {/* --- RIGHT: BILL SUMMARY --- */}
+          {/* --- RIGHT COLUMN: BILL SUMMARY --- */}
           <div className="lg:col-span-1">
              <div className="bg-[#0f0f0f] border border-gray-800 p-6 rounded-2xl sticky top-4">
                 <h3 className="font-bold text-xl mb-6 text-gray-200">Bill Details</h3>

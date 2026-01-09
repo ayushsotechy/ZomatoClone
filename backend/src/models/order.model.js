@@ -20,7 +20,16 @@ const orderSchema = new mongoose.Schema({
     enum: ['Placed', 'Preparing', 'Out for Delivery', 'Delivered'], 
     default: 'Placed' 
   },
-  createdAt: { type: Date, default: Date.now }
-});
+  createdAt: { type: Date, default: Date.now },
+  deliveryLocation: {
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true }
+  },
+  restaurantLocation: {
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true }
+  }
+
+}, { timestamps: true });
 
 module.exports = mongoose.model('Order', orderSchema);

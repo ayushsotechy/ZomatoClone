@@ -39,5 +39,6 @@ const paymentRoutes = require("./routes/payment.routes");
 app.use('/auth', authRoutes);
 app.use('/food', foodRoutes);
 app.use("/payment", paymentRoutes);
+app.use("/orders", paymentRoutes);
 
 module.exports = app;

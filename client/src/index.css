@@ -57,3 +57,6 @@ input:-webkit-autofill:active{
 input {
     caret-color: white;
 }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #dc2626; /* Changed from #555 to Red-600 */
+}

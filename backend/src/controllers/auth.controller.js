@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { get } = require("mongoose");
 
+
 async function registerUser(req, res) {
   const { username, email, password } = req.body;
 
@@ -180,6 +181,31 @@ const getUserById = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+const updatePartnerLocation = async (req, res) => {
+  try {
+    const { lat, lng } = req.body;
+    const partnerId = req.user._id; // Assumes you have middleware verifying the token
+
+    // Update the logged-in partner's location
+    const updatedPartner = await foodPartnerModel.findByIdAndUpdate(
+      partnerId,
+      {
+        location: {
+          lat: lat,
+          lng: lng,
+          address: "Auto-detected Location" // You can use a geocoding API later to get real address
+        }
+      },
+      { new: true } // Return the updated document
+    );
+
+    res.json({ success: true, message: "Location updated", location: updatedPartner.location });
+
+  } catch (error) {
+    console.error("Location Update Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
 module.exports = { 
     registerUser, 
     loginUser,
@@ -188,5 +214,6 @@ module.exports = {
     loginFoodPartner,
     logoutFoodPartner,
     getMyProfile,
-    getUserById
+    getUserById,
+    updatePartnerLocation
 };
