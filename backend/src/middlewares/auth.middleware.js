@@ -7,11 +7,10 @@ async function authFoodPartnerMiddleware(req, res, next) {
   try {
     let token;
     
-    // ✅ PRIORITY 1: Check Authorization Header (Best for your React App)
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
       token = req.headers.authorization.split(" ")[1];
     }
-    // ⚠️ PRIORITY 2: Check Cookie (Fallback)
+    
     else if (req.cookies.token) {
       token = req.cookies.token;
     }
