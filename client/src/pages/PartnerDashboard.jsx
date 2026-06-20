@@ -24,7 +24,7 @@ const PartnerDashboard = () => {
         const updateLocation = async (latitude, longitude) => {
             try {
                 // 1. Get Token
-                const token = localStorage.getItem('token'); 
+                const token = localStorage.getItem('zomatoToken'); 
                 
                 // 2. Prepare Config (Always send cookies)
                 const config = {

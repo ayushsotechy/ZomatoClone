@@ -3,7 +3,7 @@ const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const registerController = require('../controllers/auth.controller');
-const { userPartnerMiddleware } = require('../middlewares/auth.middleware.js');
+const { authFoodPartnerMiddleware, userPartnerMiddleware } = require('../middlewares/auth.middleware.js');
 const { updatePartnerLocation } = require('../controllers/auth.controller');
 // const { userPartnerMiddleware } = require('../middlewares/auth.middleware');
 
@@ -23,7 +23,7 @@ router.get('/get-user/:id', registerController.getUserById);
 
 
 
-router.put('/update-location', userPartnerMiddleware, updatePartnerLocation);
+router.put('/update-location', authFoodPartnerMiddleware, updatePartnerLocation);
 
 // --- GOOGLE AUTH ROUTES ---
 

@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
         }
         
         setUser(null);
+        localStorage.removeItem('zomatoToken');
         localStorage.removeItem('zomatoUser');
         window.location.href = '/login'; // Force redirect
     };

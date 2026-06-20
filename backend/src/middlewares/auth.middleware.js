@@ -34,6 +34,7 @@ async function authFoodPartnerMiddleware(req, res, next) {
     }
 
     req.foodie = partner;
+    req.user = partner;
     next();
 
   } catch (error) {

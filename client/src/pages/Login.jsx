@@ -61,6 +61,9 @@ const Login = () => {
             if (isPartner) {
                 const response = await loginPartner(formData);
                 const userData = response.data.user; 
+                if (response.data.token) {
+                    localStorage.setItem("zomatoToken", response.data.token);
+                }
                 localStorage.setItem("zomatoUser", JSON.stringify(userData));
                 login({ ...userData, role: 'partner' }); 
                 alert("Partner Login Successful!");
@@ -68,6 +71,9 @@ const Login = () => {
             } else {
                 const response = await loginUser(formData);
                 const userData = response.data.user; 
+                if (response.data.token) {
+                    localStorage.setItem("zomatoToken", response.data.token);
+                }
                 localStorage.setItem("zomatoUser", JSON.stringify(userData));
                 login({ ...userData, role: 'user' });
                 alert("User Login Successful!");

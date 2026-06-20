@@ -4,6 +4,11 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { get } = require("mongoose");
 
+const cookieOptions = () => ({
+  httpOnly: true,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+});
 
 async function registerUser(req, res) {
   const { username, email, password } = req.body;
@@ -30,10 +35,11 @@ async function registerUser(req, res) {
     { expiresIn: "1h" }
   );
 
-  res.cookie("token", token);
+  res.cookie("token", token, cookieOptions());
 
   return res.status(201).json({
     message: "User registered successfully",
+    token,
     user: {
       id: user._id,
       name: user.username,
@@ -57,9 +63,10 @@ async function loginUser(req,res){
     },process.env.JWT_SECRET,{expiresIn:'1h'});
 
 
-    res.cookie("token",token);
+    res.cookie("token", token, cookieOptions());
     return res.status(200).json({
         message:"Login successful",
+        token,
         user:{
             id:user._id,
             name:user.username,
@@ -69,7 +76,7 @@ async function loginUser(req,res){
 }
 
 async function logoutUser(req,res){
-  res.clearCookie("token");
+  res.clearCookie("token", cookieOptions());
   return res.status(200).json({message:"Logout successful"});
 }
 
@@ -94,9 +101,10 @@ async function registerFoodPartner(req,res){
     },process.env.JWT_SECRET,{expiresIn:'1h'});
 
 
-    res.cookie("token",token);
+    res.cookie("token", token, cookieOptions());
    res.status(201).json({
     message:"Food partner registered successfully",
+    token,
     foodPartner:{
       id:foodPartner._id,
       name:foodPartner.username,
@@ -119,9 +127,10 @@ async function loginFoodPartner(req,res){
     },process.env.JWT_SECRET,{expiresIn:'1h'});
 
 
-    res.cookie("token",token);
+    res.cookie("token", token, cookieOptions());
     return res.status(200).json({
         message:"Login successful",
+        token,
         user:{
             id:user._id,
             username:user.username,
@@ -131,7 +140,7 @@ async function loginFoodPartner(req,res){
 
 }
 async function logoutFoodPartner(req,res){
-  res.clearCookie("token");
+  res.clearCookie("token", cookieOptions());
   return res.status(200).json({message:"Logout successful"});
 }
 const getMyProfile = async (req, res) => {
@@ -198,6 +207,10 @@ const updatePartnerLocation = async (req, res) => {
       },
       { new: true } // Return the updated document
     );
+
+    if (!updatedPartner) {
+      return res.status(403).json({ message: "Only food partners can update restaurant location" });
+    }
 
     res.json({ success: true, message: "Location updated", location: updatedPartner.location });
 
