@@ -32,6 +32,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize()); // 👈 CRITICAL: Add this line!
 
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // Importing Routes
 const authRoutes = require('./routes/auth.routes');
 const foodRoutes = require('./routes/food.routes');
