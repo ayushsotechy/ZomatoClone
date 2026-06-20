@@ -42,7 +42,10 @@ router.get("/google", (req, res, next) => {
 // 2. Callback
 router.get(
   "/google/callback",
-  passport.authenticate("google", { session: false, failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL || "http://localhost:5173"}/login`
+  }),
   (req, res) => {
     // Generate Token using the SAME structure as your normal login
     // Note: passport usually returns the user in req.user

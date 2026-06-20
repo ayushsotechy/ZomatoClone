@@ -2,7 +2,6 @@ import { axiosInstance } from '../config/axios';
 
 export const createPaymentOrder = async (amount) => {
     // This matches: app.use("/payment", ...) in your backend
-    // So the full URL is: http://localhost:4444/payment/create-order
     const response = await axiosInstance.post('/payment/create-order', { amount });
     return response.data;
 };

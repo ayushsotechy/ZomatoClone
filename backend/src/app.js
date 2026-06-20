@@ -7,12 +7,13 @@ require("./config/passport.js"); // Loads your specific strategy config
 
 const app = express();
 
-// ✅ UPDATE CORS FOR DEPLOYMENT
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://flavorfeed.in", 
-  "https://www.flavorfeed.in"
-];
+  "https://flavorfeed.in",
+  "https://www.flavorfeed.in",
+  process.env.CLIENT_URL,
+  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(",") : [])
+].filter(Boolean);
 
 app.use(cors({
     origin: function (origin, callback) {

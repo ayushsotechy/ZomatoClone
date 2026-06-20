@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // ✅ Added Axios
 import { createFood } from '../api/food';
 import { useAuth } from '../context/AuthContext';
+import { axiosInstance } from '../config/axios';
 
 const PartnerDashboard = () => {
     const { user } = useAuth();
@@ -38,7 +38,7 @@ const PartnerDashboard = () => {
                 }
 
                 // 3. Make Request
-                await axios.put('http://localhost:4444/auth/update-location', {
+                await axiosInstance.put('/auth/update-location', {
                     lat: latitude,
                     lng: longitude
                 }, config);

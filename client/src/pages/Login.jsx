@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loginUser, loginPartner } from '../api/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; 
+import { API_URL } from '../config/axios';
 
 // --- TYPEWRITER COMPONENT ---
 const Typewriter = () => {
@@ -85,9 +86,7 @@ const Login = () => {
         const role = isPartner ? "partner" : "user";
         
         // 2. Attach it to the URL as a query parameter
-        const googleAuthUrl = window.location.hostname === 'localhost' 
-          ? `http://localhost:4444/auth/google?role=${role}`
-          : `/auth/google?role=${role}`;
+        const googleAuthUrl = `${API_URL}/auth/google?role=${role}`;
           
         window.location.href = googleAuthUrl; 
     };

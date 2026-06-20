@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import axios from 'axios'; // ✅ Added Axios
 import 'leaflet/dist/leaflet.css';
 import RoutingMachine from './RoutingMachine';
+import { axiosInstance } from '../config/axios';
 
 // --- ICONS ---
 const restaurantIcon = new L.Icon({
@@ -60,8 +60,7 @@ const OrderTracker = ({ userLocation, restaurantLocation, orderStatus, orderId }
                     if (orderStatus !== 'Delivered') {
                         console.log("Bike arrived! Updating database...");
                         
-                        // ⚠️ ENSURE PORT MATCHES YOUR BACKEND (4444 or 5000)
-                        axios.post('http://localhost:4444/orders/update-status', {
+                        axiosInstance.post('/orders/update-status', {
                             orderId: orderId,
                             status: 'Delivered'
                         })
